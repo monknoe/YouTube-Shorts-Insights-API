@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session
 from typing import List
 
-from app.database import get_session
+from app.core.database import get_session
 from app.schemas.item import ItemCreate, ItemRead, RequestBody
-from app.models.item import Item
+from app.models.item import Item 
+from app.models.user import User
 from app.crud.item import create_item, get_items, get_item_by_id, update_item_db, delete_item_db, search_items_db
+from app.core.security import get_current_user
 
 router = APIRouter(prefix="/items", tags=["Items"])
 
@@ -16,11 +18,11 @@ def create_item_route(
 ):
     return create_item(session, item)
 
-@router.get("/", response_model=List[ItemRead])
-def list_items(
-    session: Session = Depends(get_session)
-):
-    return get_items(session)
+# @router.get("/", response_model=List[ItemRead])
+# def list_items(
+#     session: Session = Depends(get_session)
+# ):
+#     return get_items(session)
 
 @router.get("/{item_id}")
 def read_item(item_id: int, session: Session = Depends(get_session)):
@@ -36,4 +38,12 @@ def delete_item(item_id: int, session: Session = Depends(get_session)):
 
 @router.post("/search_body")
 def search_items(body: RequestBody, session: Session = Depends(get_session)):
-    return search_items_db(session, body) 
+    return search_items_db(session, body)
+
+# 沒有登入不能Acceses
+@router.get("/", response_model=List[ItemRead])
+def list_items(
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user)  # ← 這裡保護路由
+):
+    return get_items(session)
