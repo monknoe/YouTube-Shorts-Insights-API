@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.core.database import create_db_and_tables
-from app.routers import item, auth
+from app.routers import item, auth, youtube
 import signal
 import os
 
@@ -21,3 +21,4 @@ def on_startup():
 
 app.include_router(item.router)
 app.include_router(auth.router)
+app.include_router(youtube.router)
