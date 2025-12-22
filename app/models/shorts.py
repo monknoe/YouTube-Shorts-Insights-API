@@ -9,4 +9,4 @@ class Shorts(SQLModel, table=True):
     channel: str
     published_at: datetime
     thumbnail: str
-    keyword: str  # 搜尋關鍵字（之後做趨勢分析會用到）
+    keyword: str = Field(index=True)  # 搜尋關鍵字（之後做趨勢分析會用到）
