@@ -2,6 +2,11 @@ from sqlmodel import SQLModel
 from datetime import datetime
 from typing import Optional
 
+class ShortsGrowth(SQLModel):
+    current_count: int
+    previous_count: int
+    growth_rate: float
+    
 class TopKeyword(SQLModel):
     keyword: str
     count: int
