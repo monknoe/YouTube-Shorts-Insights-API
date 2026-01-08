@@ -41,32 +41,6 @@ def search_shorts(keyword: str, max_results: int = 10):#just for search function
 
     return videos
 
-def save_shorts(session: Session, videos: list, keyword: str):
-    saved = []
-
-    for v in videos:
-        # 檢查是否已存在（避免重複）
-        statement = select(Shorts).where(Shorts.video_id == v["video_id"])
-        exists = session.exec(statement).first()
-
-        if exists:
-            continue
-        
-        item = Shorts(
-            video_id=v["video_id"],
-            title=v["title"],
-            channel=v["channel"],
-            published_at=v["published_at"],
-            thumbnail=v["thumbnail"],
-            keyword=keyword
-        )
-
-        session.add(item)
-        saved.append(item)
-
-    session.commit()
-    return saved
-
 def list_shorts_from_db(
     session: Session,
     keyword: str | None = None,
@@ -236,3 +210,53 @@ def get_top_keywords(
         {"keyword": keyword, "count": count}
         for keyword, count in rows
     ]
+
+
+def get_shorts_growth(
+    session: Session,
+    days: int = 7,
+    keyword: str | None = None,
+):
+    # 1) 以 DB 最新時間為基準
+    max_time = session.exec(
+        select(func.max(Shorts.published_at))
+    ).one()
+
+    if not max_time:
+        return {
+            "current_count": 0,
+            "previous_count": 0,
+            "growth_rate": 0.0
+        }
+
+    current_start = max_time - timedelta(days=days)
+    previous_start = max_time - timedelta(days=days * 2)
+
+    # 2) 本期
+    current_stmt = select(func.count(Shorts.id)).where(
+        Shorts.published_at >= current_start
+    )
+    # 3) 前一期
+    previous_stmt = select(func.count(Shorts.id)).where(
+        Shorts.published_at >= previous_start,
+        Shorts.published_at < current_start
+    )
+
+    if keyword:
+        current_stmt = current_stmt.where(Shorts.keyword == keyword)
+        previous_stmt = previous_stmt.where(Shorts.keyword == keyword)
+
+    current_count = session.exec(current_stmt).one()
+    previous_count = session.exec(previous_stmt).one()
+
+    # 4) 成長率計算（防呆）
+    if previous_count == 0:
+        growth_rate = 100.0 if current_count > 0 else 0.0
+    else:
+        growth_rate = ((current_count - previous_count) / previous_count) * 100
+
+    return {
+        "current_count": current_count,
+        "previous_count": previous_count,
+        "growth_rate": round(growth_rate, 2),
+    }
