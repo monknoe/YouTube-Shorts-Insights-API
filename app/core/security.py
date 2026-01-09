@@ -4,6 +4,7 @@ from jose import jwt,JWTError
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel import Session
+import os
 
 from app.core.database import get_session
 from app.models.user import User
